@@ -1,0 +1,11 @@
+{
+  "version": "0.5.2",
+  "notes": "Renombrar titulo de la app a Consulta asociados CELTA - Servicio Eléctrico",
+  "pub_date": "2026-02-12T05:00:00Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTL3lPU3JqUENhRU1RY09tYW5OZWNlU0daNXVMMC9NZFVta1JSdnIyVHUzRC9EQzhNOVM3U3lnS3FWTEFiNlBUekFZRXNxQ0pVSXdQbE1zc3lPeXlJRGxoWFRMTmovMXdvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzcwODEyNTYyCWZpbGU6cHJvZ3JhbWFvcGVyYWNpb25lcy12M18wLjUuMl94NjQtc2V0dXAuZXhlCnNlRy9iRnJlWThMVVhqOWY1R0dSanltZGpsTUN2NDlZbU5iQzJZaTBkY3dLVlcwb0prUmFId3pSdWVJRzI4VmF6Q245OVhqaCt3NG5HQTNGV3h4QUFRPT0K",
+      "url": "https://github.com/santysnk/ProgramaOperaciones-v3-releases/releases/download/v0.5.2/programaoperaciones-v3_0.5.2_x64-setup.exe"
+    }
+  }
+}
