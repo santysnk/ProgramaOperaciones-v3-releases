@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Codigo de Activacion</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 36px 40px;
+    width: 400px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    text-align: center;
+  }
+  h1 { font-size: 20px; font-weight: 800; letter-spacing: 1px; }
+  .subtitle { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+  label { display: block; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 24px; }
+  input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 6px;
+    border: 1px solid #475569;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-family: Consolas, monospace;
+    font-size: 20px;
+    letter-spacing: 3px;
+    text-align: center;
+    outline: none;
+    margin-top: 6px;
+  }
+  input:focus { border-color: #3b82f6; }
+  input[readonly] { background: #1a2332; cursor: default; }
+  .btn {
+    margin-top: 24px;
+    width: 100%;
+    padding: 10px 0;
+    border-radius: 6px;
+    border: none;
+    background: #3b82f6;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+  }
+  .btn:hover { background: #2563eb; }
+  .btn-copy {
+    margin-top: 8px;
+    background: #334155;
+    color: #94a3b8;
+  }
+  .btn-copy:hover { background: #475569; }
+  .result { margin-top: 24px; display: none; }
+  .result.visible { display: block; }
+  .error { color: #f87171; font-size: 12px; margin-top: 8px; }
+  #loginView .lock-icon { font-size: 36px; margin-bottom: 12px; }
+  #loginView input {
+    font-size: 16px;
+    letter-spacing: 1px;
+  }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- Login gate -->
+<div class="card" id="loginView">
+  <div class="lock-icon">&#128274;</div>
+  <h1>Acceso Restringido</h1>
+  <div class="subtitle">Programa Operaciones - CELTA</div>
+
+  <label for="loginPass">Contraseña</label>
+  <input type="password" id="loginPass" placeholder="••••••••" autocomplete="off">
+
+  <button class="btn" id="loginBtn" onclick="tryLogin()">Ingresar</button>
+  <div class="error" id="loginError"></div>
+</div>
+
+<!-- Keygen (hidden until authenticated) -->
+<div class="card hidden" id="keygenView">
+  <h1>Generador de Activacion</h1>
+  <div class="subtitle">Programa Operaciones - CELTA</div>
+
+  <label for="machineCode">Codigo de maquina</label>
+  <input type="text" id="machineCode" placeholder="XXXX-XXXX" maxlength="9" autocomplete="off">
+
+  <button class="btn" onclick="generate()">Generar codigo de activacion</button>
+
+  <div class="error" id="error"></div>
+
+  <div class="result" id="result">
+    <label for="activationCode">Codigo de activacion</label>
+    <input type="text" id="activationCode" readonly>
+    <button class="btn btn-copy" onclick="copyCode()">Copiar</button>
+  </div>
+</div>
+
+<script>
+const PASSWORD_HASH = '24ff276bed0df36952025665528e70057ca30522c7e539bbcf77a9624d28e998';
+const SESSION_KEY = 'keygen_auth';
+const KEY_SALT = 'CELTA-2026-KEY:';
+
+async function sha256hex(input) {
+  const data = new TextEncoder().encode(input);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  const bytes = new Uint8Array(hash);
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function showKeygen() {
+  document.getElementById('loginView').classList.add('hidden');
+  document.getElementById('keygenView').classList.remove('hidden');
+  const mc = document.getElementById('machineCode');
+  if (mc) mc.focus();
+}
+
+async function tryLogin() {
+  const pass = document.getElementById('loginPass').value;
+  const errorEl = document.getElementById('loginError');
+  errorEl.textContent = '';
+
+  if (!pass) { errorEl.textContent = 'Ingrese la contraseña.'; return; }
+
+  const hash = await sha256hex(pass);
+  if (hash === PASSWORD_HASH) {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    showKeygen();
+  } else {
+    errorEl.textContent = 'Contraseña incorrecta';
+  }
+}
+
+// Check session on load
+if (sessionStorage.getItem(SESSION_KEY) === '1') {
+  showKeygen();
+} else {
+  document.getElementById('loginPass').focus();
+}
+
+// Enter key on password field
+document.getElementById('loginPass').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') tryLogin();
+});
+
+// ─── Keygen logic ─────────────────────────────────────
+
+async function generate() {
+  const errorEl = document.getElementById('error');
+  const resultEl = document.getElementById('result');
+  const input = document.getElementById('machineCode').value.trim().toUpperCase();
+  errorEl.textContent = '';
+  resultEl.classList.remove('visible');
+
+  if (!input || !/^[A-F0-9]{4}-[A-F0-9]{4}$/.test(input)) {
+    errorEl.textContent = 'Formato invalido. Debe ser XXXX-XXXX (hexadecimal).';
+    return;
+  }
+
+  const hex = (await sha256hex(KEY_SALT + input)).toUpperCase();
+  const code = hex.substring(0, 4) + '-' + hex.substring(4, 8);
+  document.getElementById('activationCode').value = code;
+  resultEl.classList.add('visible');
+}
+
+function copyCode() {
+  const code = document.getElementById('activationCode').value;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.querySelector('.btn-copy');
+    btn.textContent = 'Copiado!';
+    setTimeout(() => btn.textContent = 'Copiar', 2000);
+  });
+}
+
+// Auto-format input and generate on Enter
+document.getElementById('machineCode').addEventListener('input', function(e) {
+  let v = e.target.value.replace(/[^a-fA-F0-9-]/g, '').toUpperCase();
+  if (v.length === 4 && !v.includes('-')) v = v + '-';
+  if (v.length > 9) v = v.substring(0, 9);
+  e.target.value = v;
+});
+
+document.getElementById('machineCode').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') generate();
+});
+</script>
+</body>
+</html>
